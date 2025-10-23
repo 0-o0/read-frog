@@ -6,7 +6,7 @@ import { IconLoader2, IconVolume } from '@tabler/icons-react'
 import { useMutation } from '@tanstack/react-query'
 import { readUIMessageStream, streamText } from 'ai'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { useTextToSpeech } from '@/hooks/use-text-to-speech'
 import { isLLMTranslateProviderConfig, isNonAPIProvider, isPureAPIProvider } from '@/types/config/provider'
@@ -16,7 +16,9 @@ import { authClient } from '@/utils/auth/auth-client'
 import { getConfigFromStorage } from '@/utils/config/config'
 import { getProviderOptions } from '@/utils/constants/model'
 import { WEBSITE_URL } from '@/utils/constants/url'
+import { isFirefox } from '@/utils/firefox-compat'
 import { deeplxTranslate, googleTranslate, microsoftTranslate } from '@/utils/host/translate/api'
+import { translateText } from '@/utils/host/translate/translate-text'
 import { sendMessage } from '@/utils/message'
 import { getTranslatePrompt } from '@/utils/prompts/translate'
 import { getTranslateModelById } from '@/utils/providers/model'
@@ -55,6 +57,7 @@ export function TranslatePopover() {
   const selectionContent = useAtomValue(selectionContentAtom)
   const [isVisible, setIsVisible] = useAtom(isTranslatePopoverVisibleAtom)
   const { data: session } = authClient.useSession()
+  const isFirefoxEnv = useMemo(() => isFirefox(), [])
 
   const createVocabulary = useMutation({
     ...trpc.vocabulary.create.mutationOptions(),
@@ -125,6 +128,13 @@ export function TranslatePopover() {
       setIsTranslating(true)
 
       try {
+        if (isFirefoxEnv) {
+          const backgroundTranslation = await translateText(cleanText)
+          const normalized = backgroundTranslation.trim()
+          setTranslatedText(normalized === cleanText ? '' : normalized)
+          return
+        }
+
         let translatedText = ''
 
         if (isNonAPIProvider(provider)) {
@@ -198,7 +208,7 @@ export function TranslatePopover() {
     if (isVisible) {
       void translate()
     }
-  }, [isVisible, selectionContent, languageConfig.sourceCode, languageConfig.targetCode, translateProviderConfig])
+  }, [isVisible, selectionContent, languageConfig.sourceCode, languageConfig.targetCode, translateProviderConfig, isFirefoxEnv])
 
   return (
     <PopoverWrapper

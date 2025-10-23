@@ -27,6 +27,7 @@ import { addBackup, isSameAsLatestBackup, removeBackup } from '@/utils/backup/st
 import { migrateConfig } from '@/utils/config/migration'
 import { EXTENSION_VERSION } from '@/utils/constants/app'
 import { CONFIG_SCHEMA_VERSION, CONFIG_SCHEMA_VERSION_STORAGE_KEY, CONFIG_STORAGE_KEY } from '@/utils/constants/config'
+import { getFirefoxDropdownContentProps } from '@/utils/firefox-compat'
 import { queryClient } from '@/utils/trpc/client'
 import { ViewConfig } from '../../components/view-config'
 
@@ -118,6 +119,7 @@ function RestoreButton({ backup }: { backup: ConfigBackup }) {
 
 function MoreOptions({ backupId, backup }: { backupId: string, backup: ConfigBackup }) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const firefoxDropdownProps = getFirefoxDropdownContentProps()
 
   const { mutate: deleteBackup, isPending: isDeleting } = useMutation({
     mutationFn: async (backupId: string) => {
@@ -141,7 +143,7 @@ function MoreOptions({ backupId, backup }: { backupId: string, backup: ConfigBac
             <Icon icon="tabler:dots" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-40" align="end">
+        <DropdownMenuContent className="w-40" align="end" {...firefoxDropdownProps}>
           <DropdownMenuItem onSelect={() => exportConfig(false)} disabled={isExporting}>
             <Icon icon="tabler:file-export" />
             {i18n.t('options.config.backup.item.export')}

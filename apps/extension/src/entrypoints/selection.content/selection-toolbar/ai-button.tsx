@@ -9,7 +9,9 @@ import { MarkdownRenderer } from '@/components/markdown-renderer'
 import { configAtom, configFieldsAtomMap } from '@/utils/atoms/config'
 import { readProviderConfigAtom } from '@/utils/atoms/provider'
 import { getFinalSourceCode } from '@/utils/config/languages'
+import { isFirefox } from '@/utils/firefox-compat'
 import { logger } from '@/utils/logger'
+import { sendMessage } from '@/utils/message'
 import { getWordExplainPrompt } from '@/utils/prompts/word-explain'
 import { getReadModelById } from '@/utils/providers/model'
 import { createHighlightData } from '../utils'
@@ -51,6 +53,7 @@ export function AiPopover() {
   const readProviderConfig = useAtomValue(readProviderConfigAtom)
   const popoverRef = useRef<PopoverWrapperRef>(null)
   const [aiResponse, setAiResponse] = useState('')
+  const isFirefoxEnv = useMemo(() => isFirefox(), [])
 
   const highlightData = useMemo(() => {
     if (!selectionRange || !isVisible) {
@@ -70,6 +73,7 @@ export function AiPopover() {
       highlightData,
       readProviderConfig,
       config,
+      isFirefoxEnv,
     ],
     queryFn: async () => {
       if (!highlightData || !readProviderConfig || !config) {
@@ -78,14 +82,32 @@ export function AiPopover() {
 
       setAiResponse('')
 
-      const model = await getReadModelById(readProviderConfig.id)
       const actualSourceCode = getFinalSourceCode(config.language.sourceCode, config.language.detectedCode)
       const systemPrompt = getWordExplainPrompt(
         actualSourceCode,
         config.language.targetCode,
         config.language.level,
       )
+      const userMessage
+        = `query: ${highlightData.context.selection}\n`
+          + `context: ${highlightData.context.before} ${highlightData.context.selection} ${highlightData.context.after}`
 
+      if (isFirefoxEnv) {
+        const response = await sendMessage('analyzeSelection', {
+          providerId: readProviderConfig.id,
+          systemPrompt,
+          userMessage,
+          temperature: 0.2,
+        })
+
+        setAiResponse(response)
+        popoverRef.current?.scrollToBottom()
+        logger.log('aiResponse', '\n', response)
+
+        return true
+      }
+
+      const model = await getReadModelById(readProviderConfig.id)
       const result = await streamText({
         model,
         temperature: 0.2,
@@ -93,9 +115,7 @@ export function AiPopover() {
         messages: [
           {
             role: 'user',
-            content:
-              `query: ${highlightData.context.selection}\n`
-              + `context: ${highlightData.context.before} ${highlightData.context.selection} ${highlightData.context.after}`,
+            content: userMessage,
           },
         ],
       })

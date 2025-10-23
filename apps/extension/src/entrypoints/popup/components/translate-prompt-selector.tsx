@@ -2,7 +2,6 @@ import type { TranslatePromptObj } from '@/types/config/translate'
 import { i18n } from '#imports'
 import { Icon } from '@iconify/react'
 import {
-  Select,
   SelectContent,
   SelectGroup,
   SelectItem,
@@ -11,10 +10,12 @@ import {
 } from '@repo/ui/components/select'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@repo/ui/components/tooltip'
 import { useAtom, useAtomValue } from 'jotai'
+import { FirefoxSelect } from '@/components/firefox-select'
 import { isLLMTranslateProvider } from '@/types/config/provider'
 import { configFieldsAtomMap } from '@/utils/atoms/config'
 import { translateProviderConfigAtom } from '@/utils/atoms/provider'
 import { DEFAULT_TRANSLATE_PROMPT_ID } from '@/utils/constants/prompt'
+import { getFirefoxSelectContentProps } from '@/utils/firefox-compat'
 
 function name(prompt: TranslatePromptObj) {
   return prompt.id === DEFAULT_TRANSLATE_PROMPT_ID ? i18n.t('options.translation.personalizedPrompts.default') : prompt.name
@@ -23,6 +24,7 @@ function name(prompt: TranslatePromptObj) {
 export default function TranslatePromptSelector() {
   const translateProviderConfig = useAtomValue(translateProviderConfigAtom)
   const [translateConfig, setTranslateConfig] = useAtom(configFieldsAtomMap.translate)
+  const firefoxProps = getFirefoxSelectContentProps()
 
   if (!translateProviderConfig?.provider || !isLLMTranslateProvider(translateProviderConfig?.provider))
     return null
@@ -45,7 +47,7 @@ export default function TranslatePromptSelector() {
           </TooltipContent>
         </Tooltip>
       </span>
-      <Select
+      <FirefoxSelect
         value={prompt}
         onValueChange={(value) => {
           void setTranslateConfig({
@@ -59,7 +61,7 @@ export default function TranslatePromptSelector() {
         <SelectTrigger className="!h-7 w-31 pr-1.5 pl-2.5">
           <SelectValue />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent {...firefoxProps}>
           <SelectGroup>
             {patterns.map(prompt => (
               <SelectItem key={prompt.id} value={prompt.id}>
@@ -68,7 +70,7 @@ export default function TranslatePromptSelector() {
             ))}
           </SelectGroup>
         </SelectContent>
-      </Select>
+      </FirefoxSelect>
     </div>
   )
 }

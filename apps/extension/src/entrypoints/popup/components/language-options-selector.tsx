@@ -9,14 +9,15 @@ import {
   langCodeISO6393Schema,
 } from '@repo/definitions'
 import {
-  Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@repo/ui/components/select'
 import { useAtom } from 'jotai'
+import { FirefoxSelect } from '@/components/firefox-select'
 import { configFieldsAtomMap } from '@/utils/atoms/config'
+import { getFirefoxSelectContentProps } from '@/utils/firefox-compat'
 
 function langCodeLabel(langCode: LangCodeISO6393) {
   return `${LANG_CODE_TO_EN_NAME[langCode]} (${LANG_CODE_TO_LOCALE_NAME[langCode]})`
@@ -28,6 +29,7 @@ const langSelectorContentClasses = 'flex flex-col items-start text-base font-med
 
 export default function LanguageOptionsSelector() {
   const [language, setLanguage] = useAtom(configFieldsAtomMap.language)
+  const firefoxProps = getFirefoxSelectContentProps()
 
   const handleSourceLangChange = (newLangCode: LangCodeISO6393) => {
     void setLanguage({ sourceCode: newLangCode })
@@ -45,7 +47,7 @@ export default function LanguageOptionsSelector() {
 
   return (
     <div className="flex items-center justify-between">
-      <Select value={language.sourceCode} onValueChange={handleSourceLangChange}>
+      <FirefoxSelect value={language.sourceCode} onValueChange={handleSourceLangChange}>
         <SelectTrigger hideChevron className={langSelectorTriggerClasses}>
           <div className={langSelectorContentClasses}>
             <SelectValue asChild>
@@ -59,7 +61,7 @@ export default function LanguageOptionsSelector() {
           </div>
           <LangCodeSelectorChevronDownIcon />
         </SelectTrigger>
-        <SelectContent className="rounded-lg shadow-md w-72">
+        <SelectContent className="rounded-lg shadow-md w-72" {...firefoxProps}>
           <SelectItem value="auto">
             {langCodeLabel(language.detectedCode)}
             <AutoLangCell />
@@ -70,9 +72,9 @@ export default function LanguageOptionsSelector() {
             </SelectItem>
           ))}
         </SelectContent>
-      </Select>
+      </FirefoxSelect>
       <Icon icon="tabler:arrow-right" className="h-4 w-4 text-neutral-500" />
-      <Select value={language.targetCode} onValueChange={handleTargetLangChange}>
+      <FirefoxSelect value={language.targetCode} onValueChange={handleTargetLangChange}>
         <SelectTrigger hideChevron className={langSelectorTriggerClasses}>
           <div className={langSelectorContentClasses}>
             <SelectValue asChild>
@@ -84,14 +86,14 @@ export default function LanguageOptionsSelector() {
           </div>
           <LangCodeSelectorChevronDownIcon />
         </SelectTrigger>
-        <SelectContent className="rounded-lg shadow-md w-72">
+        <SelectContent className="rounded-lg shadow-md w-72" {...firefoxProps}>
           {langCodeISO6393Schema.options.map(key => (
             <SelectItem key={key} value={key}>
               {langCodeLabel(key)}
             </SelectItem>
           ))}
         </SelectContent>
-      </Select>
+      </FirefoxSelect>
     </div>
   )
 }

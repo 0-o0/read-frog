@@ -1,7 +1,9 @@
 import { browser, defineBackground } from '#imports'
+import { streamText } from 'ai'
 import { WEBSITE_URL } from '@/utils/constants/url'
 import { logger } from '@/utils/logger'
 import { onMessage, sendMessage } from '@/utils/message'
+import { getReadModelById } from '@/utils/providers/model'
 import { SessionCacheGroupRegistry } from '@/utils/session-cache/session-cache-group-registry'
 import { cleanupAllCache, setUpCacheCleanup } from './cache-cleanup'
 import { ensureInitializedConfig } from './config'
@@ -47,6 +49,35 @@ export default defineBackground({
 
     onMessage('popupRequestReadArticle', async (message) => {
       void sendMessage('readArticle', undefined, message.data.tabId)
+    })
+
+    onMessage('analyzeSelection', async (message) => {
+      const { providerId, systemPrompt, userMessage, temperature = 0.2 } = message.data
+      try {
+        const model = await getReadModelById(providerId)
+        const result = await streamText({
+          model,
+          temperature,
+          system: systemPrompt,
+          messages: [
+            {
+              role: 'user',
+              content: userMessage,
+            },
+          ],
+        })
+
+        let fullResponse = ''
+        for await (const delta of result.textStream) {
+          fullResponse += delta
+        }
+
+        return fullResponse
+      }
+      catch (error) {
+        logger.error('[Background] analyzeSelection failed', error)
+        throw error
+      }
     })
 
     onMessage('clearAllCache', async () => {
