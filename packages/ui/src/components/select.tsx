@@ -1,16 +1,203 @@
 'use client'
 
+import type { FirefoxOutsideInteractionGuard } from '../utils/firefox-compat'
+
 import * as SelectPrimitive from '@radix-ui/react-select'
 import { cn } from '@repo/ui/lib/utils'
 
 import { IconCheck, IconChevronDown, IconChevronUp } from '@tabler/icons-react'
 
 import * as React from 'react'
+import {
+  getFirefoxPopupContainer,
+  isFirefoxCompatEnv,
+  preventDismiss,
+  registerFirefoxOutsideGuard,
+  unregisterFirefoxOutsideGuard,
+} from '../utils/firefox-compat'
 
 function Select({
-  ...props
+  open: openProp,
+  defaultOpen,
+  onOpenChange,
+  onValueChange,
+  children,
+  ...rest
 }: React.ComponentProps<typeof SelectPrimitive.Root>) {
-  return <SelectPrimitive.Root data-slot="select" {...props} />
+  const isFirefoxEnv = React.useMemo(() => isFirefoxCompatEnv(), [])
+
+  const isControlled = openProp !== undefined
+  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen ?? false)
+  const open = isControlled ? openProp : uncontrolledOpen
+  const openRef = React.useRef(open)
+
+  const justOpenedRef = React.useRef(false)
+  const debounceTimeoutRef = React.useRef<number | undefined>(undefined)
+  const allowCloseRef = React.useRef(false)
+  const allowCloseTimeoutRef = React.useRef<number | undefined>(undefined)
+
+  const clearDebounce = React.useCallback(() => {
+    if (debounceTimeoutRef.current !== undefined) {
+      window.clearTimeout(debounceTimeoutRef.current)
+      debounceTimeoutRef.current = undefined
+    }
+  }, [])
+
+  const clearAllowCloseTimeout = React.useCallback(() => {
+    if (allowCloseTimeoutRef.current !== undefined) {
+      window.clearTimeout(allowCloseTimeoutRef.current)
+      allowCloseTimeoutRef.current = undefined
+    }
+  }, [])
+
+  const grantClosePermission = React.useCallback(() => {
+    allowCloseRef.current = true
+    if (allowCloseTimeoutRef.current !== undefined)
+      window.clearTimeout(allowCloseTimeoutRef.current)
+
+    allowCloseTimeoutRef.current = window.setTimeout(() => {
+      allowCloseRef.current = false
+      allowCloseTimeoutRef.current = undefined
+    }, 400)
+  }, [])
+
+  React.useEffect(() => {
+    openRef.current = open
+  }, [open])
+
+  React.useEffect(() => () => {
+    clearDebounce()
+    clearAllowCloseTimeout()
+  }, [clearAllowCloseTimeout, clearDebounce])
+
+  const setOpenState = React.useCallback((next: boolean) => {
+    if (!isControlled)
+      setUncontrolledOpen(next)
+  }, [isControlled])
+
+  const handleFirefoxOpenChange = React.useCallback((next: boolean) => {
+    if (next) {
+      setOpenState(true)
+      onOpenChange?.(true)
+      justOpenedRef.current = true
+      allowCloseRef.current = false
+      clearDebounce()
+      debounceTimeoutRef.current = window.setTimeout(() => {
+        justOpenedRef.current = false
+        debounceTimeoutRef.current = undefined
+      }, 250)
+      return
+    }
+
+    if (justOpenedRef.current || !allowCloseRef.current) {
+      setOpenState(true)
+      return
+    }
+
+    allowCloseRef.current = false
+    clearAllowCloseTimeout()
+    setOpenState(false)
+    onOpenChange?.(false)
+  }, [clearAllowCloseTimeout, clearDebounce, onOpenChange, setOpenState])
+
+  const handleFirefoxValueChange = React.useCallback((value: string) => {
+    grantClosePermission()
+    onValueChange?.(value)
+  }, [grantClosePermission, onValueChange])
+
+  React.useEffect(() => {
+    if (!isFirefoxEnv)
+      return
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as HTMLElement | null
+      if (!target)
+        return
+
+      if (target.closest('[data-slot="select-trigger"]') || target.closest('[data-slot="select-item"]')) {
+        grantClosePermission()
+        return
+      }
+
+      if (!openRef.current)
+        return
+
+      if (justOpenedRef.current)
+        return
+
+      if (!target.closest('[data-slot="select-content"]'))
+        grantClosePermission()
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && openRef.current) {
+        grantClosePermission()
+        event.stopPropagation()
+        if (typeof event.stopImmediatePropagation === 'function')
+          event.stopImmediatePropagation()
+        event.preventDefault()
+      }
+    }
+
+    window.addEventListener('pointerdown', handlePointerDown, true)
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDown, true)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [grantClosePermission, isFirefoxEnv])
+
+  React.useEffect(() => {
+    if (!isFirefoxEnv)
+      return
+
+    const guard: FirefoxOutsideInteractionGuard = () => {
+      if (!openRef.current)
+        return false
+
+      if (justOpenedRef.current)
+        return true
+
+      if (!allowCloseRef.current)
+        return true
+
+      return false
+    }
+
+    registerFirefoxOutsideGuard(guard)
+
+    return () => {
+      unregisterFirefoxOutsideGuard(guard)
+    }
+  }, [isFirefoxEnv])
+
+  if (!isFirefoxEnv) {
+    return (
+      <SelectPrimitive.Root
+        data-slot="select"
+        open={openProp}
+        defaultOpen={defaultOpen}
+        onOpenChange={onOpenChange}
+        onValueChange={onValueChange}
+        {...rest}
+      >
+        {children}
+      </SelectPrimitive.Root>
+    )
+  }
+
+  return (
+    <SelectPrimitive.Root
+      data-slot="select"
+      open={open}
+      onOpenChange={handleFirefoxOpenChange}
+      onValueChange={handleFirefoxValueChange}
+      {...rest}
+    >
+      {children}
+    </SelectPrimitive.Root>
+  )
 }
 
 function SelectGroup({
@@ -70,6 +257,29 @@ function SelectContent({
   collisionBoundary?: Element | Element[] | null
   disablePortal?: boolean
 }) {
+  const isFirefoxEnv = React.useMemo(() => isFirefoxCompatEnv(), [])
+
+  const pointerDownOutsideHandler = isFirefoxEnv
+    ? (event: Event) => {
+        preventDismiss(event)
+        onPointerDownOutside?.(event as any)
+      }
+    : onPointerDownOutside
+
+  const closeAutoFocusHandler = isFirefoxEnv
+    ? (event: Event) => {
+        preventDismiss(event)
+        onCloseAutoFocus?.(event as any)
+      }
+    : onCloseAutoFocus
+
+  const finalCollisionBoundary = isFirefoxEnv
+    ? (collisionBoundary ?? getFirefoxPopupContainer() ?? undefined)
+    : collisionBoundary
+
+  const finalDisablePortal = isFirefoxEnv ? true : disablePortal
+  const finalContainer = container ?? undefined
+
   const content = (
     <SelectPrimitive.Content
       data-slot="select-content"
@@ -81,9 +291,9 @@ function SelectContent({
         className,
       )}
       position={position}
-      onPointerDownOutside={onPointerDownOutside}
-      onCloseAutoFocus={onCloseAutoFocus}
-      collisionBoundary={collisionBoundary}
+      onPointerDownOutside={pointerDownOutsideHandler}
+      onCloseAutoFocus={closeAutoFocusHandler}
+      collisionBoundary={finalCollisionBoundary}
       {...props}
     >
       <SelectScrollUpButton />
@@ -100,12 +310,12 @@ function SelectContent({
     </SelectPrimitive.Content>
   )
 
-  if (disablePortal) {
+  if (finalDisablePortal) {
     return content
   }
 
   return (
-    <SelectPrimitive.Portal container={container ?? undefined}>
+    <SelectPrimitive.Portal container={finalContainer}>
       {content}
     </SelectPrimitive.Portal>
   )

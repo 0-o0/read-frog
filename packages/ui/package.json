@@ -7,7 +7,8 @@
     "./components/*": "./src/components/*.tsx",
     "./theme.css": "./src/styles/theme.css",
     "./lib/*": "./src/lib/*.ts",
-    "./hooks/*": "./src/hooks/*.ts"
+    "./hooks/*": "./src/hooks/*.ts",
+    "./utils/*": "./src/utils/*.ts"
   },
   "scripts": {
     "lint": "eslint",

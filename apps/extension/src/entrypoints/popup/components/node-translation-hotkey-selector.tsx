@@ -1,5 +1,6 @@
 import { i18n } from '#imports'
 import {
+  Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -7,20 +8,17 @@ import {
 import { Switch } from '@repo/ui/components/switch'
 import { deepmerge } from 'deepmerge-ts'
 import { useAtom } from 'jotai'
-import { FirefoxSelect } from '@/components/firefox-select'
 import { configFieldsAtomMap } from '@/utils/atoms/config'
 import { HOTKEY_ITEMS, HOTKEYS } from '@/utils/constants/hotkeys'
-import { getFirefoxSelectContentProps } from '@/utils/firefox-compat'
 
 export default function NodeTranslationHotkeySelector() {
   const [translateConfig, setTranslateConfig] = useAtom(
     configFieldsAtomMap.translate,
   )
-  const firefoxProps = getFirefoxSelectContentProps()
 
   return (
     <div className="flex items-center justify-between gap-2">
-      <FirefoxSelect
+      <Select
         value={translateConfig.node.hotkey}
         onValueChange={(value: typeof HOTKEYS[number]) => setTranslateConfig(deepmerge(translateConfig, { node: { hotkey: value } }))}
       >
@@ -40,7 +38,7 @@ export default function NodeTranslationHotkeySelector() {
             {i18n.t('popup.translateParagraph')}
           </div>
         </SelectTrigger>
-        <SelectContent {...firefoxProps}>
+        <SelectContent>
           {HOTKEYS.map(item => (
             <SelectItem key={item} value={item}>
               {i18n.t('popup.hover')}
@@ -55,7 +53,7 @@ export default function NodeTranslationHotkeySelector() {
             </SelectItem>
           ))}
         </SelectContent>
-      </FirefoxSelect>
+      </Select>
       <Switch
         checked={translateConfig.node.enabled}
         onCheckedChange={checked => setTranslateConfig(deepmerge(translateConfig, { node: { enabled: checked } }))}

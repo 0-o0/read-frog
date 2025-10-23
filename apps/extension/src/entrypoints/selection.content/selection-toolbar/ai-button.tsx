@@ -1,6 +1,7 @@
 import type { PopoverWrapperRef } from './components/popover-wrapper'
 import { useMemo, useRef, useState } from '#imports'
 import { Icon } from '@iconify/react'
+import { isFirefoxCompatEnv } from '@repo/ui/utils/firefox-compat'
 import { useQuery } from '@tanstack/react-query'
 import { streamText } from 'ai'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
@@ -9,7 +10,6 @@ import { MarkdownRenderer } from '@/components/markdown-renderer'
 import { configAtom, configFieldsAtomMap } from '@/utils/atoms/config'
 import { readProviderConfigAtom } from '@/utils/atoms/provider'
 import { getFinalSourceCode } from '@/utils/config/languages'
-import { isFirefox } from '@/utils/firefox-compat'
 import { logger } from '@/utils/logger'
 import { sendMessage } from '@/utils/message'
 import { getWordExplainPrompt } from '@/utils/prompts/word-explain'
@@ -53,7 +53,7 @@ export function AiPopover() {
   const readProviderConfig = useAtomValue(readProviderConfigAtom)
   const popoverRef = useRef<PopoverWrapperRef>(null)
   const [aiResponse, setAiResponse] = useState('')
-  const isFirefoxEnv = useMemo(() => isFirefox(), [])
+  const isFirefoxEnv = useMemo(() => isFirefoxCompatEnv(), [])
 
   const highlightData = useMemo(() => {
     if (!selectionRange || !isVisible) {

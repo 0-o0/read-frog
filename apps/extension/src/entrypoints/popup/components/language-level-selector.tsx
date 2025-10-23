@@ -2,24 +2,22 @@ import type { LangLevel } from '@repo/definitions'
 
 import { i18n } from '#imports'
 import {
+  Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@repo/ui/components/select'
 import { useAtom } from 'jotai'
-import { FirefoxSelect } from '@/components/firefox-select'
 import { configFieldsAtomMap } from '@/utils/atoms/config'
-import { getFirefoxSelectContentProps } from '@/utils/firefox-compat'
 
 export default function LanguageLevelSelector() {
   const [language, setLanguage] = useAtom(configFieldsAtomMap.language)
-  const firefoxProps = getFirefoxSelectContentProps()
 
   return (
     <div className="flex items-center justify-between gap-2">
       <span className="text-[13px] font-medium">{i18n.t('languageLevel')}</span>
-      <FirefoxSelect
+      <Select
         value={language.level}
         onValueChange={(value: LangLevel) => setLanguage({ level: value })}
       >
@@ -29,7 +27,7 @@ export default function LanguageLevelSelector() {
         >
           <SelectValue />
         </SelectTrigger>
-        <SelectContent {...firefoxProps}>
+        <SelectContent>
           <SelectItem value="beginner">
             {i18n.t('languageLevels.beginner')}
           </SelectItem>
@@ -40,7 +38,7 @@ export default function LanguageLevelSelector() {
             {i18n.t('languageLevels.advanced')}
           </SelectItem>
         </SelectContent>
-      </FirefoxSelect>
+      </Select>
     </div>
   )
 }

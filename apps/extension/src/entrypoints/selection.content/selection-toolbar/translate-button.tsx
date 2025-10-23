@@ -2,6 +2,7 @@ import type { TextUIPart } from 'ai'
 import { i18n } from '#imports'
 import { Icon } from '@iconify/react'
 import { ISO6393_TO_6391, LANG_CODE_TO_EN_NAME } from '@repo/definitions'
+import { isFirefoxCompatEnv } from '@repo/ui/utils/firefox-compat'
 import { IconLoader2, IconVolume } from '@tabler/icons-react'
 import { useMutation } from '@tanstack/react-query'
 import { readUIMessageStream, streamText } from 'ai'
@@ -16,7 +17,6 @@ import { authClient } from '@/utils/auth/auth-client'
 import { getConfigFromStorage } from '@/utils/config/config'
 import { getProviderOptions } from '@/utils/constants/model'
 import { WEBSITE_URL } from '@/utils/constants/url'
-import { isFirefox } from '@/utils/firefox-compat'
 import { deeplxTranslate, googleTranslate, microsoftTranslate } from '@/utils/host/translate/api'
 import { translateText } from '@/utils/host/translate/translate-text'
 import { sendMessage } from '@/utils/message'
@@ -57,7 +57,7 @@ export function TranslatePopover() {
   const selectionContent = useAtomValue(selectionContentAtom)
   const [isVisible, setIsVisible] = useAtom(isTranslatePopoverVisibleAtom)
   const { data: session } = authClient.useSession()
-  const isFirefoxEnv = useMemo(() => isFirefox(), [])
+  const isFirefoxEnv = useMemo(() => isFirefoxCompatEnv(), [])
 
   const createVocabulary = useMutation({
     ...trpc.vocabulary.create.mutationOptions(),

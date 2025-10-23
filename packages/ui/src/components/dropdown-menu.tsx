@@ -6,6 +6,12 @@ import { cn } from '@repo/ui/lib/utils'
 import { IconCheck, IconChevronRight, IconCircle } from '@tabler/icons-react'
 import * as React from 'react'
 
+import {
+  getFirefoxPopupContainer,
+  isFirefoxCompatEnv,
+  preventDismiss,
+} from '../utils/firefox-compat'
+
 function DropdownMenu({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
@@ -35,21 +41,78 @@ function DropdownMenuContent({
   className,
   sideOffset = 4,
   container,
+  onCloseAutoFocus,
+  onPointerDownOutside,
+  onFocusOutside,
+  onInteractOutside,
+  collisionBoundary,
+  hideWhenDetached,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Content> & {
   container?: HTMLElement | null
 }) {
+  const isFirefoxEnv = React.useMemo(() => isFirefoxCompatEnv(), [])
+
+  const pointerDownOutsideHandler = isFirefoxEnv
+    ? (event: Event) => {
+        preventDismiss(event)
+        onPointerDownOutside?.(event as any)
+      }
+    : onPointerDownOutside
+
+  const focusOutsideHandler = isFirefoxEnv
+    ? (event: Event) => {
+        preventDismiss(event)
+        onFocusOutside?.(event as any)
+      }
+    : onFocusOutside
+
+  const interactOutsideHandler = isFirefoxEnv
+    ? (event: Event) => {
+        preventDismiss(event)
+        onInteractOutside?.(event as any)
+      }
+    : onInteractOutside
+
+  const closeAutoFocusHandler = isFirefoxEnv
+    ? (event: Event) => {
+        preventDismiss(event)
+        onCloseAutoFocus?.(event as any)
+      }
+    : onCloseAutoFocus
+
+  const popupContainer = React.useMemo(
+    () => getFirefoxPopupContainer() ?? undefined,
+    [],
+  )
+
+  const finalContainer = container ?? (isFirefoxEnv ? popupContainer : undefined)
+  const finalCollisionBoundary = isFirefoxEnv
+    ? (collisionBoundary ?? popupContainer)
+    : collisionBoundary
+  const finalHideWhenDetached = isFirefoxEnv ? true : hideWhenDetached
+
+  const content = (
+    <DropdownMenuPrimitive.Content
+      data-slot="dropdown-menu-content"
+      sideOffset={sideOffset}
+      className={cn(
+        'bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md',
+        className,
+      )}
+      onPointerDownOutside={pointerDownOutsideHandler}
+      onFocusOutside={focusOutsideHandler}
+      onInteractOutside={interactOutsideHandler}
+      onCloseAutoFocus={closeAutoFocusHandler}
+      collisionBoundary={finalCollisionBoundary}
+      hideWhenDetached={finalHideWhenDetached}
+      {...props}
+    />
+  )
+
   return (
-    <DropdownMenuPrimitive.Portal container={container ?? undefined}>
-      <DropdownMenuPrimitive.Content
-        data-slot="dropdown-menu-content"
-        sideOffset={sideOffset}
-        className={cn(
-          'bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md',
-          className,
-        )}
-        {...props}
-      />
+    <DropdownMenuPrimitive.Portal container={finalContainer}>
+      {content}
     </DropdownMenuPrimitive.Portal>
   )
 }
