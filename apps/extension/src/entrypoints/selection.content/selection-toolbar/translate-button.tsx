@@ -17,6 +17,7 @@ import { authClient } from '@/utils/auth/auth-client'
 import { getConfigFromStorage } from '@/utils/config/config'
 import { getProviderOptions } from '@/utils/constants/model'
 import { WEBSITE_URL } from '@/utils/constants/url'
+import { createPortStreamPromise } from '@/utils/firefox-streaming'
 import { deeplxTranslate, googleTranslate, microsoftTranslate } from '@/utils/host/translate/api'
 import { translateText } from '@/utils/host/translate/translate-text'
 import { sendMessage } from '@/utils/message'
@@ -108,6 +109,9 @@ export function TranslatePopover() {
   }, [session?.user?.id, selectionContent, translatedText, createVocabulary])
 
   useEffect(() => {
+    let cancelTranslation: (() => void) | undefined
+    let isCancelled = false
+
     const translate = async () => {
       const cleanText = selectionContent?.replace(/\u200B/g, '').trim()
       if (!cleanText) {
@@ -126,10 +130,50 @@ export function TranslatePopover() {
       const { provider } = translateProviderConfig
 
       setIsTranslating(true)
+      cancelTranslation = undefined
 
       try {
+        if (isFirefoxEnv && isLLMTranslateProviderConfig(translateProviderConfig)) {
+          const targetLangName = LANG_CODE_TO_EN_NAME[languageConfig.targetCode]
+          const { id: providerId, models: { translate } } = translateProviderConfig
+          const translateModel = translate.isCustomModel ? translate.customModel : translate.model
+          const providerOptions = getProviderOptions(translateModel ?? '')
+          const prompt = await getTranslatePrompt(targetLangName, cleanText)
+
+          const abortController = new AbortController()
+          cancelTranslation = () => abortController.abort()
+
+          const latestText = await createPortStreamPromise<string>(
+            'translate-text-stream',
+            {
+              providerId,
+              prompt,
+              providerOptions,
+            },
+            {
+              signal: abortController.signal,
+              onChunk: (data) => {
+                if (!isCancelled) {
+                  setTranslatedText(data)
+                }
+              },
+            },
+          )
+
+          if (isCancelled) {
+            return
+          }
+
+          const normalized = latestText.trim()
+          setTranslatedText(normalized === cleanText ? '' : normalized)
+          return
+        }
+
         if (isFirefoxEnv) {
           const backgroundTranslation = await translateText(cleanText)
+          if (isCancelled) {
+            return
+          }
           const normalized = backgroundTranslation.trim()
           setTranslatedText(normalized === cleanText ? '' : normalized)
           return
@@ -168,45 +212,67 @@ export function TranslatePopover() {
           const translateModel = translate.isCustomModel ? translate.customModel : translate.model
           const model = await getTranslateModelById(providerId)
 
-          // Configure ultrathink for thinking models
           const providerOptions = getProviderOptions(translateModel ?? '')
           const prompt = await getTranslatePrompt(targetLangName, cleanText)
 
-          // Use streaming for AI providers
           const result = streamText({
             model,
             prompt,
             providerOptions,
           })
 
+          const abortController = new AbortController()
+          cancelTranslation = () => {
+            abortController.abort()
+          }
+
           for await (const uiMessage of readUIMessageStream({
             stream: result.toUIMessageStream(),
           })) {
+            if (isCancelled || abortController.signal.aborted) {
+              return
+            }
             const lastPart = uiMessage.parts[uiMessage.parts.length - 1] as TextUIPart
             setTranslatedText(lastPart.text)
           }
+
+          cancelTranslation = undefined
         }
         else {
           throw new Error(`Unknown provider: ${provider}`)
         }
 
-        // Set final text if not streaming
         if (translatedText && !isLLMTranslateProviderConfig(translateProviderConfig)) {
           translatedText = translatedText.trim()
           setTranslatedText(translatedText === cleanText ? '' : translatedText)
         }
       }
       catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return
+        }
+
+        if (isCancelled) {
+          return
+        }
+
         console.error('Translation error:', error)
         toast.error('Translation failed')
       }
       finally {
+        cancelTranslation = undefined
         setIsTranslating(false)
       }
     }
 
     if (isVisible) {
       void translate()
+    }
+
+    return () => {
+      isCancelled = true
+      cancelTranslation?.()
+      cancelTranslation = undefined
     }
   }, [isVisible, selectionContent, languageConfig.sourceCode, languageConfig.targetCode, translateProviderConfig, isFirefoxEnv])
 
