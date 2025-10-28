@@ -8,6 +8,7 @@
     "./theme.css": "./src/styles/theme.css",
     "./lib/*": "./src/lib/*.ts",
     "./hooks/*": "./src/hooks/*.ts",
+    "./plugins/*.cjs": "./plugins/*.cjs",
     "./utils/*": "./src/utils/*.ts"
   },
   "scripts": {
