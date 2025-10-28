@@ -12,6 +12,7 @@ interface RadixLikeEvent extends Event {
 export type FirefoxOutsideInteractionGuard = (event: RadixLikeEvent) => boolean
 
 const firefoxOutsideGuards = new Set<FirefoxOutsideInteractionGuard>()
+const MAX__DEPTH = 10
 
 export function isFirefoxCompatEnv(): boolean {
   if (typeof navigator === 'undefined' || typeof window === 'undefined')
@@ -56,7 +57,7 @@ function shouldPreventByGuards(event: RadixLikeEvent): boolean {
 }
 
 function stopEventChain(event: RadixLikeEvent | undefined, depth = 0): void {
-  if (!event || depth > 10)
+  if (!event || depth > MAX__DEPTH)
     return
 
   event.preventDefault()

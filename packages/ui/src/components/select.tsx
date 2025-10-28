@@ -259,6 +259,19 @@ function SelectContent({
 }) {
   const isFirefoxEnv = React.useMemo(() => isFirefoxCompatEnv(), [])
 
+  // Check if we're inside a shadow DOM
+  const isInShadowDOM = React.useMemo(() => {
+    if (typeof document === 'undefined')
+      return false
+    let node = document.activeElement
+    while (node) {
+      if (node instanceof ShadowRoot)
+        return true
+      node = (node as any).parentNode || (node as any).host
+    }
+    return false
+  }, [])
+
   const pointerDownOutsideHandler = isFirefoxEnv
     ? (event: Event) => {
         preventDismiss(event)
@@ -273,11 +286,12 @@ function SelectContent({
       }
     : onCloseAutoFocus
 
-  const finalCollisionBoundary = isFirefoxEnv
+  const finalCollisionBoundary = isFirefoxEnv && isInShadowDOM
     ? (collisionBoundary ?? getFirefoxPopupContainer() ?? undefined)
     : collisionBoundary
 
-  const finalDisablePortal = isFirefoxEnv ? true : disablePortal
+  // Only disable portal if we're in Firefox AND inside shadow DOM
+  const finalDisablePortal = (isFirefoxEnv && isInShadowDOM) ? true : disablePortal
   const finalContainer = container ?? undefined
 
   const content = (
