@@ -12,6 +12,13 @@
   ],
   "semverGroups": [
     {
+      "label": "Pin wxt version",
+      "packages": ["**"],
+      "dependencies": ["wxt"],
+      "dependencyTypes": ["dev"],
+      "range": ""
+    },
+    {
       "label": "Use caret ranges",
       "packages": ["**"],
       "dependencies": ["**"],

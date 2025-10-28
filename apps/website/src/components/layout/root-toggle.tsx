@@ -52,6 +52,7 @@ export function RootToggle({
   }, [options, pathname])
 
   const onClick = () => {
+    // eslint-disable-next-line react-hooks/immutability
     closeOnRedirect.current = false
     setOpen(false)
   }

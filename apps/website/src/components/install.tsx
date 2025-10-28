@@ -13,7 +13,7 @@ export function Install() {
 
   useEffect(() => {
     // fix hydration mismatch
-    // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks-extra/no-direct-set-state-in-use-effect
     setBrowser(detectBrowser())
   }, [])
 

@@ -1,5 +1,4 @@
 import type { TestSeriesObject } from './types'
-import type { Config } from '@/types/config/config'
 
 export const testSeries: TestSeriesObject = {
   'complex-config-from-v020': {
@@ -165,7 +164,7 @@ Translate to {{targetLang}}:
       betaExperience: {
         enabled: false,
       },
-    } satisfies Config,
+    },
   },
   'config-with-no-default-openai-model': {
     description: 'Add selection toolbar disabled patterns config',
@@ -278,6 +277,6 @@ Translate to {{targetLang}}:
       betaExperience: {
         enabled: false,
       },
-    } satisfies Config,
+    },
   },
 }

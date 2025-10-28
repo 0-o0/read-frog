@@ -125,7 +125,7 @@ Next.js 15 app with:
 
 ## Development Environment Setup
 
-- Node.js 22.18.0+ required (specified in devEngines)
+- Node.js required (specified in devEngines)
 - pnpm as package manager
 - The extension requires browser-specific setup - check `apps/extension/web-ext.config.ts`
 

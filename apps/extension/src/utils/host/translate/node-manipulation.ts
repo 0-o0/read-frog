@@ -21,7 +21,7 @@ import {
   TRANSLATION_MODE_ATTRIBUTE,
   WALKED_ATTRIBUTE,
 } from '../../constants/dom-labels'
-import { FORCE_INLINE_TRANSLATION_TAGS } from '../../constants/dom-tags'
+import { FORCE_INLINE_TRANSLATION_TAGS } from '../../constants/dom-rules'
 import { isBlockTransNode, isHTMLElement, isInlineTransNode, isTextNode, isTranslatedWrapperNode, isTransNode } from '../dom/filter'
 import { deepQueryTopLevelSelector, findNearestAncestorBlockNodeAt, unwrapDeepestOnlyHTMLChild } from '../dom/find'
 import { getOwnerDocument } from '../dom/node'
@@ -481,11 +481,14 @@ export async function translateWalkedElement(
   config: Config,
   toggle: boolean = false,
 ) {
-  const promises: Promise<void>[] = []
+  if (!toggle && element.querySelector(`.${CONTENT_WRAPPER_CLASS}`))
+    return
 
   // if the walkId is not the same, return
   if (element.getAttribute(WALKED_ATTRIBUTE) !== walkId)
     return
+
+  const promises: Promise<void>[] = []
 
   if (element.hasAttribute(PARAGRAPH_ATTRIBUTE)) {
     let hasBlockNodeChild = false

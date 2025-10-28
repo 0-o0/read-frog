@@ -1,5 +1,5 @@
 import { loader } from 'fumadocs-core/source'
-import { createMDXSource } from 'fumadocs-mdx'
+import { createMDXSource } from 'fumadocs-mdx/runtime/next'
 import { icons } from 'lucide-react'
 import { createElement } from 'react'
 import { blog as blogPosts, docs } from '@/.source'

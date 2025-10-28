@@ -1,5 +1,29 @@
 # @read-frog/extension
 
+## 1.15.2
+
+### Patch Changes
+
+- [#653](https://github.com/mengxi-ream/read-frog/pull/653) [`b20c83a`](https://github.com/mengxi-ream/read-frog/commit/b20c83ad84b2d7c12cc57b025c879e897e75f5f0) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - build: upgrade deps
+
+- [#655](https://github.com/mengxi-ream/read-frog/pull/655) [`27a1346`](https://github.com/mengxi-ream/read-frog/commit/27a13463fff3f0ad0f75659770ae08aa808785f5) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - fix: resolve CSS property conflicts with host pages
+
+## 1.15.1
+
+### Patch Changes
+
+- [#649](https://github.com/mengxi-ream/read-frog/pull/649) [`ba7bc35`](https://github.com/mengxi-ream/read-frog/commit/ba7bc3535dec4fbe67eb5c7a80493a1cccaeff5f) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - docs(extension): add descriptions to provider groups in add provider dialog
+
+- [#648](https://github.com/mengxi-ream/read-frog/pull/648) [`087104c`](https://github.com/mengxi-ream/read-frog/commit/087104c02f04ba68a85c9007555cca8b57c8d78f) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - feat: add node translation shortcut setting on option page
+
+- [#650](https://github.com/mengxi-ream/read-frog/pull/650) [`052c34e`](https://github.com/mengxi-ream/read-frog/commit/052c34e8a2dd11ef7dbe096587ebe6dca188640f) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - fix(extension): prevent translation of MathML elements and improve academic content handling
+
+- [#647](https://github.com/mengxi-ream/read-frog/pull/647) [`ab99603`](https://github.com/mengxi-ream/read-frog/commit/ab99603244baf5f08eb81cb3fbaf7cecd73a6ad8) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - fix: prevent node translation trigger with key combinations
+
+- [#651](https://github.com/mengxi-ream/read-frog/pull/651) [`637c7ea`](https://github.com/mengxi-ream/read-frog/commit/637c7ea8b94bdf7819b5e1a9ed8928f006c3e7db) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - fix(extension): prevent double translation on Reddit and improve translation performance
+
+- [#645](https://github.com/mengxi-ream/read-frog/pull/645) [`a9b79e3`](https://github.com/mengxi-ream/read-frog/commit/a9b79e3b6184f58291ecc47d4c623646af95954a) Thanks [@mengxi-ream](https://github.com/mengxi-ream)! - refactor: move auto-translate shortcut to page config
+
 ## 1.15.0
 
 ### Minor Changes

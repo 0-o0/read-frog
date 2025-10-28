@@ -15,7 +15,5 @@ export const config = createTypedConfig({
     'test/consistent-test-it': 'error',
     'test/no-identical-title': 'error',
     'test/prefer-hooks-on-top': 'error',
-    'react-hooks-extra/no-direct-set-state-in-use-effect': 'error',
-    'react-hooks-extra/no-direct-set-state-in-use-layout-effect': 'error',
   },
 })

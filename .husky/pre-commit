@@ -3,4 +3,4 @@ if [ "$SKIP_HUSKY" = "true" ]; then
   exit 0
 fi
 
-npx lint-staged
+pnpm exec lint-staged

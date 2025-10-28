@@ -8,8 +8,7 @@ import {
   INLINE_CONTENT_CLASS,
   NOTRANSLATE_CLASS,
 } from '@/utils/constants/dom-labels'
-import { DONT_WALK_AND_TRANSLATE_TAGS, DONT_WALK_BUT_TRANSLATE_TAGS, FORCE_BLOCK_TAGS, MAIN_CONTENT_IGNORE_TAGS } from '@/utils/constants/dom-tags'
-import { CUSTOM_DONT_WALK_INTO_ELEMENT_SELECTOR_MAP } from '@/utils/constants/translate'
+import { CUSTOM_DONT_WALK_INTO_ELEMENT_SELECTOR_MAP, DONT_WALK_AND_TRANSLATE_TAGS, DONT_WALK_BUT_TRANSLATE_TAGS, FORCE_BLOCK_TAGS, MAIN_CONTENT_IGNORE_TAGS } from '@/utils/constants/dom-rules'
 
 export function isEditable(element: HTMLElement): boolean {
   const tag = element.tagName
@@ -118,7 +117,10 @@ export function isDontWalkIntoAndDontTranslateAsChildElement(element: HTMLElemen
   const dontWalkCSS
     = window.getComputedStyle(element).display === 'none'
       || window.getComputedStyle(element).visibility === 'hidden'
-
+  const dontWalkRedditScreenReader = element.parentElement?.tagName === 'FACEPLATE-SCREEN-READER-CONTENT'
+  if (dontWalkRedditScreenReader) {
+    return true
+  }
   return dontWalkCustomElement || dontWalkContent || dontWalkInvalidTag || dontWalkCSS
 }
 
