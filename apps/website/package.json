@@ -19,6 +19,7 @@
     "@repo/db": "workspace:*",
     "@repo/definitions": "workspace:*",
     "@repo/ui": "workspace:*",
+    "@repo/utils": "workspace:*",
     "@t3-oss/env-nextjs": "^0.13.8",
     "@tabler/icons-react": "^3.34.0",
     "@tanstack/react-query": "^5.84.2",

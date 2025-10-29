@@ -1,0 +1,1 @@
+export { compareVersions } from './version'

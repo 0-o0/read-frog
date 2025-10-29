@@ -1,15 +1,17 @@
 import type { NextRequest } from 'next/server'
 import type { Locale } from '@/i18n/routing'
+import { compareVersions } from '@repo/utils'
 import { NextResponse } from 'next/server'
 import { locales } from '@/i18n/routing'
 import { blog } from '@/lib/source'
 
 /**
  * GET /api/blog/latest
- * Returns the latest blog post information for a given locale
+ * Returns the latest blog post information for a given locale that is compatible with the extension version
  *
  * Query params:
  * - locale: string (default: 'en') - The locale to fetch the latest post for
+ * - extensionVersion: string (optional) - The current extension version to filter compatible posts
  *
  * Response:
  * - 200: { date: string (ISO), title: string, description: string, url: string, extensionVersion: string | null } | null
@@ -18,6 +20,7 @@ import { blog } from '@/lib/source'
 export function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const locale = searchParams.get('locale') || 'en'
+  const extensionVersion = searchParams.get('extensionVersion')
 
   // Validate locale (basic validation)
   if (!locales.includes(locale as Locale)) {
@@ -38,7 +41,28 @@ export function GET(request: NextRequest) {
       return NextResponse.json(null)
     }
 
-    const latestPost = posts[0]
+    // Filter posts based on extension version compatibility
+    let compatiblePosts = posts
+    if (extensionVersion) {
+      compatiblePosts = posts.filter((post) => {
+        const postExtensionVersion = post.data.extensionVersion
+        // If post doesn't specify a version, it's compatible with all versions
+        if (!postExtensionVersion)
+          return true
+
+        try {
+          // Post is compatible if current version >= required version
+          return compareVersions(extensionVersion, postExtensionVersion) >= 0
+        }
+        catch {
+          // On error, assume compatible
+          return true
+        }
+      })
+    }
+
+    // Get the latest compatible post
+    const latestPost = compatiblePosts[0]
     if (!latestPost) {
       return NextResponse.json(null)
     }

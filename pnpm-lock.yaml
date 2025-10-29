@@ -318,6 +318,9 @@ importers:
       '@repo/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@repo/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
       '@t3-oss/env-nextjs':
         specifier: ^0.13.8
         version: 0.13.8(typescript@5.9.3)(zod@4.0.17)
@@ -736,6 +739,19 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+
+  packages/utils:
+    dependencies:
+      '@repo/definitions':
+        specifier: workspace:*
+        version: link:../definitions
+    devDependencies:
+      '@repo/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
 
 packages:
 
@@ -7299,8 +7315,7 @@ packages:
           targets:
             - cpu: x64
               os: win32
-    version: 24.11.0
-    hasBin: true
+    version: 0.0.0
 
   normalize-path@3.0.0:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
