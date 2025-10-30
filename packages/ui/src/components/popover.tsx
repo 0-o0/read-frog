@@ -5,7 +5,7 @@ import * as React from 'react'
 
 import {
   getFirefoxPopupContainer,
-  isFirefoxCompatEnv,
+  isFirefoxExtensionEnv,
   preventDismiss,
 } from '../utils/firefox-compat'
 
@@ -27,7 +27,7 @@ function PopoverContent({
   ref?: React.RefObject<React.ComponentRef<typeof PopoverPrimitive.Content> | null>
   container?: HTMLElement | null
 }) {
-  const isFirefoxEnv = React.useMemo(() => isFirefoxCompatEnv(), [])
+  const isFirefoxEnv = React.useMemo(() => isFirefoxExtensionEnv(), [])
 
   const pointerDownOutsideHandler = isFirefoxEnv
     ? (event: Event) => {

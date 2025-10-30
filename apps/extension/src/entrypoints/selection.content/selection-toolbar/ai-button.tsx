@@ -1,7 +1,7 @@
 import type { PopoverWrapperRef } from './components/popover-wrapper'
 import { useMemo, useRef, useState } from '#imports'
 import { Icon } from '@iconify/react'
-import { isFirefoxCompatEnv } from '@repo/ui/utils/firefox-compat'
+import { isFirefoxExtensionEnv } from '@repo/ui/utils/firefox-compat'
 import { useQuery } from '@tanstack/react-query'
 import { streamText } from 'ai'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
@@ -53,7 +53,7 @@ export function AiPopover() {
   const readProviderConfig = useAtomValue(readProviderConfigAtom)
   const popoverRef = useRef<PopoverWrapperRef>(null)
   const [aiResponse, setAiResponse] = useState('')
-  const isFirefoxEnv = useMemo(() => isFirefoxCompatEnv(), [])
+  const isFirefoxEnv = useMemo(() => isFirefoxExtensionEnv(), [])
 
   const highlightData = useMemo(() => {
     if (!selectionRange || !isVisible) {

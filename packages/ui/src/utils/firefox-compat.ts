@@ -12,18 +12,21 @@ interface RadixLikeEvent extends Event {
 export type FirefoxOutsideInteractionGuard = (event: RadixLikeEvent) => boolean
 
 const firefoxOutsideGuards = new Set<FirefoxOutsideInteractionGuard>()
-const MAX__DEPTH = 10
+const MAX_DEPTH = 10
 
-export function isFirefoxCompatEnv(): boolean {
+export function isFirefoxExtensionEnv(): boolean {
   if (typeof navigator === 'undefined' || typeof window === 'undefined')
     return false
 
+  // Check if the browser is Firefox
   if (!/firefox/i.test(navigator.userAgent))
     return false
 
+  // Check if it's Firefox extension page, e.g. popup, options page, etc.
   if (window.location.protocol === 'moz-extension:')
     return true
 
+  // Check if it's content script
   const browserRuntimeId = (globalThis as any)?.browser?.runtime?.id
   if (typeof browserRuntimeId === 'string' && browserRuntimeId.length > 0)
     return true
@@ -57,7 +60,7 @@ function shouldPreventByGuards(event: RadixLikeEvent): boolean {
 }
 
 function stopEventChain(event: RadixLikeEvent | undefined, depth = 0): void {
-  if (!event || depth > MAX__DEPTH)
+  if (!event || depth > MAX_DEPTH)
     return
 
   event.preventDefault()

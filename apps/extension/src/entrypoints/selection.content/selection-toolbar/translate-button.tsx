@@ -2,7 +2,7 @@ import type { TextUIPart } from 'ai'
 import { i18n } from '#imports'
 import { Icon } from '@iconify/react'
 import { ISO6393_TO_6391, LANG_CODE_TO_EN_NAME } from '@repo/definitions'
-import { isFirefoxCompatEnv } from '@repo/ui/utils/firefox-compat'
+import { isFirefoxExtensionEnv } from '@repo/ui/utils/firefox-compat'
 import { IconLoader2, IconVolume } from '@tabler/icons-react'
 import { useMutation } from '@tanstack/react-query'
 import { readUIMessageStream, streamText } from 'ai'
@@ -58,7 +58,7 @@ export function TranslatePopover() {
   const selectionContent = useAtomValue(selectionContentAtom)
   const [isVisible, setIsVisible] = useAtom(isTranslatePopoverVisibleAtom)
   const { data: session } = authClient.useSession()
-  const isFirefoxEnv = useMemo(() => isFirefoxCompatEnv(), [])
+  const isFirefoxEnv = useMemo(() => isFirefoxExtensionEnv(), [])
 
   const createVocabulary = useMutation({
     ...trpc.vocabulary.create.mutationOptions(),

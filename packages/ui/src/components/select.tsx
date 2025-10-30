@@ -10,7 +10,7 @@ import { IconCheck, IconChevronDown, IconChevronUp } from '@tabler/icons-react'
 import * as React from 'react'
 import {
   getFirefoxPopupContainer,
-  isFirefoxCompatEnv,
+  isFirefoxExtensionEnv,
   preventDismiss,
   registerFirefoxOutsideGuard,
   unregisterFirefoxOutsideGuard,
@@ -24,7 +24,7 @@ function Select({
   children,
   ...rest
 }: React.ComponentProps<typeof SelectPrimitive.Root>) {
-  const isFirefoxEnv = React.useMemo(() => isFirefoxCompatEnv(), [])
+  const isFirefoxEnv = React.useMemo(() => isFirefoxExtensionEnv(), [])
 
   const isControlled = openProp !== undefined
   const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen ?? false)
@@ -257,7 +257,7 @@ function SelectContent({
   collisionBoundary?: Element | Element[] | null
   disablePortal?: boolean
 }) {
-  const isFirefoxEnv = React.useMemo(() => isFirefoxCompatEnv(), [])
+  const isFirefoxEnv = React.useMemo(() => isFirefoxExtensionEnv(), [])
 
   // Check if we're inside a shadow DOM
   const isInShadowDOM = React.useMemo(() => {
