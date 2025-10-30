@@ -8,7 +8,7 @@ import * as React from 'react'
 
 import {
   getFirefoxPopupContainer,
-  isFirefoxExtensionEnv,
+  getIsFirefoxExtensionEnv,
   preventDismiss,
 } from '../utils/firefox-compat'
 
@@ -51,30 +51,30 @@ function DropdownMenuContent({
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Content> & {
   container?: HTMLElement | null
 }) {
-  const isFirefoxEnv = React.useMemo(() => isFirefoxExtensionEnv(), [])
+  const isFirefoxExtensionEnv = React.useMemo(() => getIsFirefoxExtensionEnv(), [])
 
-  const pointerDownOutsideHandler = isFirefoxEnv
+  const pointerDownOutsideHandler = isFirefoxExtensionEnv
     ? (event: Event) => {
         preventDismiss(event)
         onPointerDownOutside?.(event as any)
       }
     : onPointerDownOutside
 
-  const focusOutsideHandler = isFirefoxEnv
+  const focusOutsideHandler = isFirefoxExtensionEnv
     ? (event: Event) => {
         preventDismiss(event)
         onFocusOutside?.(event as any)
       }
     : onFocusOutside
 
-  const interactOutsideHandler = isFirefoxEnv
+  const interactOutsideHandler = isFirefoxExtensionEnv
     ? (event: Event) => {
         preventDismiss(event)
         onInteractOutside?.(event as any)
       }
     : onInteractOutside
 
-  const closeAutoFocusHandler = isFirefoxEnv
+  const closeAutoFocusHandler = isFirefoxExtensionEnv
     ? (event: Event) => {
         preventDismiss(event)
         onCloseAutoFocus?.(event as any)
@@ -86,11 +86,11 @@ function DropdownMenuContent({
     [],
   )
 
-  const finalContainer = container ?? (isFirefoxEnv ? popupContainer : undefined)
-  const finalCollisionBoundary = isFirefoxEnv
+  const finalContainer = container ?? (isFirefoxExtensionEnv ? popupContainer : undefined)
+  const finalCollisionBoundary = isFirefoxExtensionEnv
     ? (collisionBoundary ?? popupContainer)
     : collisionBoundary
-  const finalHideWhenDetached = isFirefoxEnv ? true : hideWhenDetached
+  const finalHideWhenDetached = isFirefoxExtensionEnv ? true : hideWhenDetached
 
   const content = (
     <DropdownMenuPrimitive.Content

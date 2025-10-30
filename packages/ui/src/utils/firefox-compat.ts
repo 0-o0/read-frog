@@ -14,7 +14,7 @@ export type FirefoxOutsideInteractionGuard = (event: RadixLikeEvent) => boolean
 const firefoxOutsideGuards = new Set<FirefoxOutsideInteractionGuard>()
 const MAX_DEPTH = 10
 
-export function isFirefoxExtensionEnv(): boolean {
+export function getIsFirefoxExtensionEnv(): boolean {
   if (typeof navigator === 'undefined' || typeof window === 'undefined')
     return false
 

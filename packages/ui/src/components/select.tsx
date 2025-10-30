@@ -10,7 +10,7 @@ import { IconCheck, IconChevronDown, IconChevronUp } from '@tabler/icons-react'
 import * as React from 'react'
 import {
   getFirefoxPopupContainer,
-  isFirefoxExtensionEnv,
+  getIsFirefoxExtensionEnv,
   preventDismiss,
   registerFirefoxOutsideGuard,
   unregisterFirefoxOutsideGuard,
@@ -24,7 +24,7 @@ function Select({
   children,
   ...rest
 }: React.ComponentProps<typeof SelectPrimitive.Root>) {
-  const isFirefoxEnv = React.useMemo(() => isFirefoxExtensionEnv(), [])
+  const isFirefoxEnv = React.useMemo(() => getIsFirefoxExtensionEnv(), [])
 
   const isControlled = openProp !== undefined
   const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen ?? false)
@@ -172,27 +172,28 @@ function Select({
     }
   }, [isFirefoxEnv])
 
-  if (!isFirefoxEnv) {
+  if (isFirefoxEnv) {
     return (
       <SelectPrimitive.Root
         data-slot="select"
-        open={openProp}
-        defaultOpen={defaultOpen}
-        onOpenChange={onOpenChange}
-        onValueChange={onValueChange}
+        open={open}
+        onOpenChange={handleFirefoxOpenChange}
+        onValueChange={handleFirefoxValueChange}
         {...rest}
       >
         {children}
       </SelectPrimitive.Root>
+
     )
   }
 
   return (
     <SelectPrimitive.Root
       data-slot="select"
-      open={open}
-      onOpenChange={handleFirefoxOpenChange}
-      onValueChange={handleFirefoxValueChange}
+      open={openProp}
+      defaultOpen={defaultOpen}
+      onOpenChange={onOpenChange}
+      onValueChange={onValueChange}
       {...rest}
     >
       {children}
@@ -257,7 +258,7 @@ function SelectContent({
   collisionBoundary?: Element | Element[] | null
   disablePortal?: boolean
 }) {
-  const isFirefoxEnv = React.useMemo(() => isFirefoxExtensionEnv(), [])
+  const isFirefoxEnv = React.useMemo(() => getIsFirefoxExtensionEnv(), [])
 
   // Check if we're inside a shadow DOM
   const isInShadowDOM = React.useMemo(() => {
