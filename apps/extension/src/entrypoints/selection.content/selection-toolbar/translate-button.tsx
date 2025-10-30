@@ -58,7 +58,7 @@ export function TranslatePopover() {
   const selectionContent = useAtomValue(selectionContentAtom)
   const [isVisible, setIsVisible] = useAtom(isTranslatePopoverVisibleAtom)
   const { data: session } = authClient.useSession()
-  const isFirefoxEnv = useMemo(() => getIsFirefoxExtensionEnv(), [])
+  const isFirefoxExtensionEnv = useMemo(() => getIsFirefoxExtensionEnv(), [])
 
   const createVocabulary = useMutation({
     ...trpc.vocabulary.create.mutationOptions(),
@@ -133,7 +133,7 @@ export function TranslatePopover() {
       cancelTranslation = undefined
 
       try {
-        if (isFirefoxEnv && isLLMTranslateProviderConfig(translateProviderConfig)) {
+        if (isFirefoxExtensionEnv && isLLMTranslateProviderConfig(translateProviderConfig)) {
           const targetLangName = LANG_CODE_TO_EN_NAME[languageConfig.targetCode]
           const { id: providerId, models: { translate } } = translateProviderConfig
           const translateModel = translate.isCustomModel ? translate.customModel : translate.model
@@ -169,7 +169,7 @@ export function TranslatePopover() {
           return
         }
 
-        if (isFirefoxEnv) {
+        if (isFirefoxExtensionEnv) {
           const backgroundTranslation = await translateText(cleanText)
           if (isCancelled) {
             return
@@ -274,7 +274,7 @@ export function TranslatePopover() {
       cancelTranslation?.()
       cancelTranslation = undefined
     }
-  }, [isVisible, selectionContent, languageConfig.sourceCode, languageConfig.targetCode, translateProviderConfig, isFirefoxEnv])
+  }, [isVisible, selectionContent, languageConfig.sourceCode, languageConfig.targetCode, translateProviderConfig, isFirefoxExtensionEnv])
 
   return (
     <PopoverWrapper

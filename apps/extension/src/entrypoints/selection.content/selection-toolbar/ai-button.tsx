@@ -53,7 +53,7 @@ export function AiPopover() {
   const readProviderConfig = useAtomValue(readProviderConfigAtom)
   const popoverRef = useRef<PopoverWrapperRef>(null)
   const [aiResponse, setAiResponse] = useState('')
-  const isFirefoxEnv = useMemo(() => getIsFirefoxExtensionEnv(), [])
+  const isFirefoxExtensionEnv = useMemo(() => getIsFirefoxExtensionEnv(), [])
 
   const highlightData = useMemo(() => {
     if (!selectionRange || !isVisible) {
@@ -73,7 +73,7 @@ export function AiPopover() {
       highlightData,
       readProviderConfig,
       config,
-      isFirefoxEnv,
+      isFirefoxExtensionEnv,
     ],
     queryFn: async ({ signal }) => {
       if (!highlightData || !readProviderConfig || !config) {
@@ -97,7 +97,7 @@ export function AiPopover() {
           = `query: ${highlightData.context.selection}\n`
             + `context: ${highlightData.context.before} ${highlightData.context.selection} ${highlightData.context.after}`
 
-        if (isFirefoxEnv) {
+        if (isFirefoxExtensionEnv) {
           const finalResponse = await createPortStreamPromise<string>(
             'analyze-selection-stream',
             {

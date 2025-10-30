@@ -24,7 +24,7 @@ function Select({
   children,
   ...rest
 }: React.ComponentProps<typeof SelectPrimitive.Root>) {
-  const isFirefoxEnv = React.useMemo(() => getIsFirefoxExtensionEnv(), [])
+  const isFirefoxExtensionEnv = React.useMemo(() => getIsFirefoxExtensionEnv(), [])
 
   const isControlled = openProp !== undefined
   const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen ?? false)
@@ -106,7 +106,7 @@ function Select({
   }, [grantClosePermission, onValueChange])
 
   React.useEffect(() => {
-    if (!isFirefoxEnv)
+    if (!isFirefoxExtensionEnv)
       return
 
     const handlePointerDown = (event: PointerEvent) => {
@@ -146,10 +146,10 @@ function Select({
       window.removeEventListener('pointerdown', handlePointerDown, true)
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [grantClosePermission, isFirefoxEnv])
+  }, [grantClosePermission, isFirefoxExtensionEnv])
 
   React.useEffect(() => {
-    if (!isFirefoxEnv)
+    if (!isFirefoxExtensionEnv)
       return
 
     const guard: FirefoxOutsideInteractionGuard = () => {
@@ -170,9 +170,9 @@ function Select({
     return () => {
       unregisterFirefoxOutsideGuard(guard)
     }
-  }, [isFirefoxEnv])
+  }, [isFirefoxExtensionEnv])
 
-  if (isFirefoxEnv) {
+  if (isFirefoxExtensionEnv) {
     return (
       <SelectPrimitive.Root
         data-slot="select"
@@ -258,7 +258,7 @@ function SelectContent({
   collisionBoundary?: Element | Element[] | null
   disablePortal?: boolean
 }) {
-  const isFirefoxEnv = React.useMemo(() => getIsFirefoxExtensionEnv(), [])
+  const isFirefoxExtensionEnv = React.useMemo(() => getIsFirefoxExtensionEnv(), [])
 
   // Check if we're inside a shadow DOM
   const isInShadowDOM = React.useMemo(() => {
@@ -273,26 +273,26 @@ function SelectContent({
     return false
   }, [])
 
-  const pointerDownOutsideHandler = isFirefoxEnv
+  const pointerDownOutsideHandler = isFirefoxExtensionEnv
     ? (event: Event) => {
         preventDismiss(event)
         onPointerDownOutside?.(event as any)
       }
     : onPointerDownOutside
 
-  const closeAutoFocusHandler = isFirefoxEnv
+  const closeAutoFocusHandler = isFirefoxExtensionEnv
     ? (event: Event) => {
         preventDismiss(event)
         onCloseAutoFocus?.(event as any)
       }
     : onCloseAutoFocus
 
-  const finalCollisionBoundary = isFirefoxEnv && isInShadowDOM
+  const finalCollisionBoundary = isFirefoxExtensionEnv && isInShadowDOM
     ? (collisionBoundary ?? getFirefoxPopupContainer() ?? undefined)
     : collisionBoundary
 
   // Only disable portal if we're in Firefox AND inside shadow DOM
-  const finalDisablePortal = (isFirefoxEnv && isInShadowDOM) ? true : disablePortal
+  const finalDisablePortal = (isFirefoxExtensionEnv && isInShadowDOM) ? true : disablePortal
   const finalContainer = container ?? undefined
 
   const content = (

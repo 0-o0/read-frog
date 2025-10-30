@@ -27,16 +27,16 @@ function PopoverContent({
   ref?: React.RefObject<React.ComponentRef<typeof PopoverPrimitive.Content> | null>
   container?: HTMLElement | null
 }) {
-  const isFirefoxEnv = React.useMemo(() => getIsFirefoxExtensionEnv(), [])
+  const isFirefoxExtensionEnv = React.useMemo(() => getIsFirefoxExtensionEnv(), [])
 
-  const pointerDownOutsideHandler = isFirefoxEnv
+  const pointerDownOutsideHandler = isFirefoxExtensionEnv
     ? (event: Event) => {
         preventDismiss(event)
         onPointerDownOutside?.(event as any)
       }
     : onPointerDownOutside
 
-  const openAutoFocusHandler = isFirefoxEnv
+  const openAutoFocusHandler = isFirefoxExtensionEnv
     ? (event: Event) => {
         preventDismiss(event)
         onOpenAutoFocus?.(event as any)
@@ -48,8 +48,8 @@ function PopoverContent({
     [],
   )
 
-  const finalContainer = container ?? (isFirefoxEnv ? popupContainer : undefined)
-  const finalCollisionBoundary = isFirefoxEnv
+  const finalContainer = container ?? (isFirefoxExtensionEnv ? popupContainer : undefined)
+  const finalCollisionBoundary = isFirefoxExtensionEnv
     ? (collisionBoundary ?? popupContainer)
     : collisionBoundary
 
