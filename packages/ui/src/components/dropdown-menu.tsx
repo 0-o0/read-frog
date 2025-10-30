@@ -7,7 +7,7 @@ import { IconCheck, IconChevronRight, IconCircle } from '@tabler/icons-react'
 import * as React from 'react'
 
 import {
-  getFirefoxPopupContainer,
+  getFirefoxExtensionRoot,
   getIsFirefoxExtensionEnv,
   preventDismiss,
 } from '../utils/firefox-compat'
@@ -82,7 +82,7 @@ function DropdownMenuContent({
     : onCloseAutoFocus
 
   const popupContainer = React.useMemo(
-    () => getFirefoxPopupContainer() ?? undefined,
+    () => getFirefoxExtensionRoot() ?? undefined,
     [],
   )
 

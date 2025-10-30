@@ -9,7 +9,7 @@ import { IconCheck, IconChevronDown, IconChevronUp } from '@tabler/icons-react'
 
 import * as React from 'react'
 import {
-  getFirefoxPopupContainer,
+  getFirefoxExtensionRoot,
   getIsFirefoxExtensionEnv,
   preventDismiss,
   registerFirefoxOutsideGuard,
@@ -288,7 +288,7 @@ function SelectContent({
     : onCloseAutoFocus
 
   const finalCollisionBoundary = isFirefoxExtensionEnv && isInShadowDOM
-    ? (collisionBoundary ?? getFirefoxPopupContainer() ?? undefined)
+    ? (collisionBoundary ?? getFirefoxExtensionRoot() ?? undefined)
     : collisionBoundary
 
   // Only disable portal if we're in Firefox AND inside shadow DOM

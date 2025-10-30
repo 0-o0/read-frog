@@ -86,7 +86,7 @@ export function preventDismiss(event: Event): void {
   stopEventChain(radixEvent)
 }
 
-export function getFirefoxPopupContainer(): HTMLElement | undefined {
+export function getFirefoxExtensionRoot(): HTMLElement | undefined {
   if (typeof document === 'undefined')
     return undefined
 

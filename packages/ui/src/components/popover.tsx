@@ -4,7 +4,7 @@ import { cn } from '@repo/ui/lib/utils'
 import * as React from 'react'
 
 import {
-  getFirefoxPopupContainer,
+  getFirefoxExtensionRoot,
   getIsFirefoxExtensionEnv,
   preventDismiss,
 } from '../utils/firefox-compat'
@@ -44,7 +44,7 @@ function PopoverContent({
     : onOpenAutoFocus
 
   const popupContainer = React.useMemo(
-    () => getFirefoxPopupContainer() ?? undefined,
+    () => getFirefoxExtensionRoot() ?? undefined,
     [],
   )
 
