@@ -27,7 +27,7 @@ export default defineConfig({
     ...(browser === 'firefox' && {
       browser_specific_settings: {
         gecko: {
-          id: 'read-frog@readfrog.app',
+          id: 'extension@readfrog.app',
           strict_min_version: '109.0',
         },
       },
