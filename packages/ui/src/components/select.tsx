@@ -17,18 +17,18 @@ import {
 } from '../utils/firefox-compat'
 
 function Select({
-  open: openProp,
-  defaultOpen,
+  open: controlledOpen,
   onOpenChange,
+  defaultOpen,
   onValueChange,
   children,
   ...rest
 }: React.ComponentProps<typeof SelectPrimitive.Root>) {
   const isFirefoxExtensionEnv = React.useMemo(() => getIsFirefoxExtensionEnv(), [])
 
-  const isControlled = openProp !== undefined
+  const isControlled = controlledOpen !== undefined
   const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen ?? false)
-  const open = isControlled ? openProp : uncontrolledOpen
+  const open = isControlled ? controlledOpen : uncontrolledOpen
   const openRef = React.useRef(open)
 
   const justOpenedRef = React.useRef(false)
@@ -190,7 +190,7 @@ function Select({
   return (
     <SelectPrimitive.Root
       data-slot="select"
-      open={openProp}
+      open={controlledOpen}
       defaultOpen={defaultOpen}
       onOpenChange={onOpenChange}
       onValueChange={onValueChange}
