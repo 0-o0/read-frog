@@ -1,7 +1,6 @@
 'use client'
 
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu'
-
 import { cn } from '@repo/ui/lib/utils'
 import { IconCheck, IconChevronRight, IconCircle } from '@tabler/icons-react'
 import * as React from 'react'
@@ -11,11 +10,51 @@ import {
   getIsFirefoxExtensionEnv,
   preventDismiss,
 } from '../utils/firefox-compat'
+import { useFirefoxRadixOpenController } from '../utils/firefox-radix'
+
+const FirefoxRadixContext = React.createContext<{ grantClosePermission: () => void } | null>(null)
 
 function DropdownMenu({
+  open: controlledOpen,
+  defaultOpen,
+  onOpenChange,
+  children,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
-  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />
+  const {
+    rootOpen,
+    rootDefaultOpen,
+    handleOpenChange,
+    grantClosePermission,
+  } = useFirefoxRadixOpenController({
+    controlledOpen,
+    defaultOpen,
+    onOpenChange,
+    triggerSelectors: ['[data-slot="dropdown-menu-trigger"]'],
+    interactiveSelectors: [
+      '[data-slot="dropdown-menu-item"]',
+      '[data-slot="dropdown-menu-checkbox-item"]',
+      '[data-slot="dropdown-menu-radio-item"]',
+      '[data-slot="dropdown-menu-sub-trigger"]',
+    ],
+    contentSelector: '[data-slot="dropdown-menu-content"]',
+  })
+
+  const contextValue = React.useMemo(() => ({ grantClosePermission }), [grantClosePermission])
+
+  return (
+    <DropdownMenuPrimitive.Root
+      data-slot="dropdown-menu"
+      open={rootOpen}
+      defaultOpen={rootDefaultOpen}
+      onOpenChange={handleOpenChange}
+      {...props}
+    >
+      <FirefoxRadixContext value={contextValue}>
+        {children}
+      </FirefoxRadixContext>
+    </DropdownMenuPrimitive.Root>
+  )
 }
 
 function DropdownMenuPortal({
@@ -129,11 +168,14 @@ function DropdownMenuItem({
   className,
   inset,
   variant = 'default',
+  onSelect,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Item> & {
   inset?: boolean
   variant?: 'default' | 'destructive'
 }) {
+  const context = React.use(FirefoxRadixContext)
+
   return (
     <DropdownMenuPrimitive.Item
       data-slot="dropdown-menu-item"
@@ -143,6 +185,10 @@ function DropdownMenuItem({
         'focus:bg-accent focus:text-accent-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive data-[variant=destructive]:*:[svg]:!text-destructive [&_svg:not([class*=\'text-\'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=\'size-\'])]:size-4',
         className,
       )}
+      onSelect={(event) => {
+        context?.grantClosePermission()
+        onSelect?.(event)
+      }}
       {...props}
     />
   )
@@ -152,8 +198,11 @@ function DropdownMenuCheckboxItem({
   className,
   children,
   checked,
+  onSelect,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.CheckboxItem>) {
+  const context = React.use(FirefoxRadixContext)
+
   return (
     <DropdownMenuPrimitive.CheckboxItem
       data-slot="dropdown-menu-checkbox-item"
@@ -162,6 +211,10 @@ function DropdownMenuCheckboxItem({
         className,
       )}
       checked={checked}
+      onSelect={(event) => {
+        context?.grantClosePermission()
+        onSelect?.(event)
+      }}
       {...props}
     >
       <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
@@ -188,8 +241,11 @@ function DropdownMenuRadioGroup({
 function DropdownMenuRadioItem({
   className,
   children,
+  onSelect,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.RadioItem>) {
+  const context = React.use(FirefoxRadixContext)
+
   return (
     <DropdownMenuPrimitive.RadioItem
       data-slot="dropdown-menu-radio-item"
@@ -197,6 +253,10 @@ function DropdownMenuRadioItem({
         'focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=\'size-\'])]:size-4',
         className,
       )}
+      onSelect={(event) => {
+        context?.grantClosePermission()
+        onSelect?.(event)
+      }}
       {...props}
     >
       <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
