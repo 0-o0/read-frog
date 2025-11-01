@@ -1,7 +1,8 @@
 import type { FirefoxOutsideInteractionGuard } from './firefox-compat'
 import * as React from 'react'
 import {
-
+  elementMatchesSelector,
+  getComposedEventPath,
   getIsFirefoxExtensionEnv,
   registerFirefoxOutsideGuard,
   unregisterFirefoxOutsideGuard,
@@ -29,14 +30,37 @@ const ESCAPE_KEY = 'Escape'
 const CLOSE_PERMISSION_MS = 400
 const JUST_OPENED_DEBOUNCE_MS = 250
 
-function matchesAnySelector(target: Element, selectors: string[]): boolean {
-  for (const selector of selectors) {
-    if (!selector)
+function toElement(target: EventTarget | null | undefined): Element | null {
+  if (!target)
+    return null
+  return target instanceof Element ? target : null
+}
+
+function pathMatchesSelector(path: EventTarget[], selectors: string[]): boolean {
+  if (selectors.length === 0)
+    return false
+
+  for (const entry of path) {
+    if (!(entry instanceof Element))
       continue
-    if (target.closest(selector))
-      return true
+    for (const selector of selectors) {
+      if (elementMatchesSelector(entry, selector))
+        return true
+    }
   }
+
   return false
+}
+
+function matchesAnySelector(target: Element | null, selectors: string[], path: EventTarget[]): boolean {
+  if (target) {
+    for (const selector of selectors) {
+      if (elementMatchesSelector(target, selector))
+        return true
+    }
+  }
+
+  return pathMatchesSelector(path, selectors)
 }
 
 export function useFirefoxRadixOpenController(options: Options): Result {
@@ -79,6 +103,7 @@ export function useFirefoxRadixOpenController(options: Options): Result {
 
   const grantClosePermission = React.useCallback(() => {
     allowCloseRef.current = true
+    // Clear any existing timeout to reset the permission window
     if (allowCloseTimeoutRef.current !== undefined)
       window.clearTimeout(allowCloseTimeoutRef.current)
 
@@ -101,6 +126,8 @@ export function useFirefoxRadixOpenController(options: Options): Result {
     }
 
     if (next) {
+      // Ensure guards read the latest state before Radix replays close requests
+      openRef.current = true
       justOpenedRef.current = true
       allowCloseRef.current = false
       clearAllowCloseTimeout()
@@ -115,12 +142,14 @@ export function useFirefoxRadixOpenController(options: Options): Result {
     }
 
     if (justOpenedRef.current || !allowCloseRef.current) {
+      openRef.current = true
       setOpenState(true)
       return
     }
 
     allowCloseRef.current = false
     clearAllowCloseTimeout()
+    openRef.current = false
     setOpenState(false)
     onOpenChange?.(false)
   }, [clearAllowCloseTimeout, clearDebounce, isFirefoxMode, onOpenChange, setOpenState])
@@ -128,6 +157,26 @@ export function useFirefoxRadixOpenController(options: Options): Result {
   React.useEffect(() => {
     openRef.current = open ?? false
   }, [open])
+
+  // Register guard as early as possible so preventDismiss sees it synchronously
+  React.useLayoutEffect(() => {
+    if (!isFirefoxMode)
+      return
+
+    const guard: FirefoxOutsideInteractionGuard = (_event) => {
+      if (!openRef.current)
+        return false
+      if (justOpenedRef.current)
+        return true
+      return !allowCloseRef.current
+    }
+
+    registerFirefoxOutsideGuard(guard)
+
+    return () => {
+      unregisterFirefoxOutsideGuard(guard)
+    }
+  }, [isFirefoxMode])
 
   React.useEffect(() => {
     if (!isFirefoxMode)
@@ -144,22 +193,22 @@ export function useFirefoxRadixOpenController(options: Options): Result {
       return
 
     const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as HTMLElement | null
-      if (!target)
-        return
+      const path = getComposedEventPath(event)
+      const target = toElement(event.target)
 
-      if (matchesAnySelector(target, triggerSelectors) || matchesAnySelector(target, interactiveSelectors)) {
-        grantClosePermission()
+      const isTriggerHit = matchesAnySelector(target, triggerSelectors, path)
+      const isInteractiveHit = matchesAnySelector(target, interactiveSelectors, path)
+
+      if (isTriggerHit || isInteractiveHit) {
+        if (openRef.current)
+          grantClosePermission()
         return
       }
 
-      if (!openRef.current)
+      if (!openRef.current || justOpenedRef.current)
         return
 
-      if (justOpenedRef.current)
-        return
-
-      if (!target.closest(contentSelector))
+      if (!matchesAnySelector(target, [contentSelector], path))
         grantClosePermission()
     }
 
@@ -185,30 +234,6 @@ export function useFirefoxRadixOpenController(options: Options): Result {
       window.removeEventListener('keydown', handleKeyDown)
     }
   }, [contentSelector, grantClosePermission, interactiveSelectors, isFirefoxMode, triggerSelectors])
-
-  React.useEffect(() => {
-    if (!isFirefoxMode)
-      return
-
-    const guard: FirefoxOutsideInteractionGuard = () => {
-      if (!openRef.current)
-        return false
-
-      if (justOpenedRef.current)
-        return true
-
-      if (!allowCloseRef.current)
-        return true
-
-      return false
-    }
-
-    registerFirefoxOutsideGuard(guard)
-
-    return () => {
-      unregisterFirefoxOutsideGuard(guard)
-    }
-  }, [isFirefoxMode])
 
   return {
     isFirefoxMode,

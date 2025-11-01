@@ -12,7 +12,17 @@ import {
 } from '../utils/firefox-compat'
 import { useFirefoxRadixOpenController } from '../utils/firefox-radix'
 
-const FirefoxRadixContext = React.createContext<{ grantClosePermission: () => void } | null>(null)
+interface FirefoxDropdownMenuContextValue {
+  isFirefoxMode: boolean
+  grantClosePermission: () => void
+}
+
+const FirefoxDropdownMenuContext = React.createContext<FirefoxDropdownMenuContextValue>(
+  {
+    isFirefoxMode: false,
+    grantClosePermission: () => {},
+  },
+)
 
 function DropdownMenu({
   open: controlledOpen,
@@ -22,6 +32,7 @@ function DropdownMenu({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
   const {
+    isFirefoxMode,
     rootOpen,
     rootDefaultOpen,
     handleOpenChange,
@@ -30,17 +41,20 @@ function DropdownMenu({
     controlledOpen,
     defaultOpen,
     onOpenChange,
-    triggerSelectors: ['[data-slot="dropdown-menu-trigger"]'],
+    triggerSelectors: ['[data-slot="dropdown-menu-trigger"]', '[data-slot="dropdown-menu-sub-trigger"]'],
     interactiveSelectors: [
       '[data-slot="dropdown-menu-item"]',
       '[data-slot="dropdown-menu-checkbox-item"]',
       '[data-slot="dropdown-menu-radio-item"]',
-      '[data-slot="dropdown-menu-sub-trigger"]',
     ],
-    contentSelector: '[data-slot="dropdown-menu-content"]',
+    contentSelector: '[data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"]',
   })
 
-  const contextValue = React.useMemo(() => ({ grantClosePermission }), [grantClosePermission])
+  const contextValue = React.useMemo<FirefoxDropdownMenuContextValue>(() => (
+    isFirefoxMode
+      ? { isFirefoxMode: true, grantClosePermission }
+      : { isFirefoxMode: false, grantClosePermission: () => {} }
+  ), [grantClosePermission, isFirefoxMode])
 
   return (
     <DropdownMenuPrimitive.Root
@@ -50,9 +64,9 @@ function DropdownMenu({
       onOpenChange={handleOpenChange}
       {...props}
     >
-      <FirefoxRadixContext value={contextValue}>
+      <FirefoxDropdownMenuContext value={contextValue}>
         {children}
-      </FirefoxRadixContext>
+      </FirefoxDropdownMenuContext>
     </DropdownMenuPrimitive.Root>
   )
 }
@@ -80,6 +94,7 @@ function DropdownMenuContent({
   className,
   sideOffset = 4,
   container,
+  disablePortal = false,
   onCloseAutoFocus,
   onPointerDownOutside,
   onFocusOutside,
@@ -89,46 +104,73 @@ function DropdownMenuContent({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Content> & {
   container?: HTMLElement | null
+  collisionBoundary?: Element | Element[] | null
+  disablePortal?: boolean
 }) {
   const isFirefoxExtensionEnv = React.useMemo(() => getIsFirefoxExtensionEnv(), [])
 
-  const pointerDownOutsideHandler = isFirefoxExtensionEnv
-    ? (event: Event) => {
-        preventDismiss(event)
-        onPointerDownOutside?.(event as any)
-      }
-    : onPointerDownOutside
+  const isInShadowDOM = React.useMemo(() => {
+    if (typeof document === 'undefined')
+      return false
 
-  const focusOutsideHandler = isFirefoxExtensionEnv
-    ? (event: Event) => {
-        preventDismiss(event)
-        onFocusOutside?.(event as any)
-      }
-    : onFocusOutside
+    let node: Node | null = document.activeElement
+    while (node) {
+      if (node instanceof ShadowRoot)
+        return true
+      node = (node as any).parentNode || (node as any).host || null
+    }
 
-  const interactOutsideHandler = isFirefoxExtensionEnv
-    ? (event: Event) => {
-        preventDismiss(event)
-        onInteractOutside?.(event as any)
-      }
-    : onInteractOutside
+    return false
+  }, [])
 
-  const closeAutoFocusHandler = isFirefoxExtensionEnv
-    ? (event: Event) => {
-        preventDismiss(event)
-        onCloseAutoFocus?.(event as any)
-      }
-    : onCloseAutoFocus
+  const pointerDownOutsideHandler = React.useMemo(() => {
+    if (!isFirefoxExtensionEnv)
+      return onPointerDownOutside
 
-  const popupContainer = React.useMemo(
-    () => getFirefoxExtensionRoot() ?? undefined,
-    [],
-  )
+    return (event: Event) => {
+      preventDismiss(event)
+      onPointerDownOutside?.(event as any)
+    }
+  }, [isFirefoxExtensionEnv, onPointerDownOutside])
 
-  const finalContainer = container ?? (isFirefoxExtensionEnv ? popupContainer : undefined)
-  const finalCollisionBoundary = isFirefoxExtensionEnv
-    ? (collisionBoundary ?? popupContainer)
+  const closeAutoFocusHandler = React.useMemo(() => {
+    if (!isFirefoxExtensionEnv)
+      return onCloseAutoFocus
+
+    return (event: Event) => {
+      preventDismiss(event)
+      onCloseAutoFocus?.(event as any)
+    }
+  }, [isFirefoxExtensionEnv, onCloseAutoFocus])
+
+  const focusOutsideHandler = React.useMemo(() => {
+    if (!isFirefoxExtensionEnv)
+      return onFocusOutside
+
+    return (event: Event) => {
+      preventDismiss(event)
+      onFocusOutside?.(event as any)
+    }
+  }, [isFirefoxExtensionEnv, onFocusOutside])
+
+  const interactOutsideHandler = React.useMemo(() => {
+    if (!isFirefoxExtensionEnv)
+      return onInteractOutside
+
+    return (event: Event) => {
+      preventDismiss(event)
+      onInteractOutside?.(event as any)
+    }
+  }, [isFirefoxExtensionEnv, onInteractOutside])
+
+  const firefoxRoot = React.useMemo(() => getFirefoxExtensionRoot() ?? undefined, [])
+
+  const finalCollisionBoundary = isFirefoxExtensionEnv && isInShadowDOM
+    ? (collisionBoundary ?? firefoxRoot)
     : collisionBoundary
+
+  const finalDisablePortal = (isFirefoxExtensionEnv && isInShadowDOM) ? true : disablePortal
+  const finalContainer = container ?? (isFirefoxExtensionEnv ? firefoxRoot : undefined)
   const finalHideWhenDetached = isFirefoxExtensionEnv ? true : hideWhenDetached
 
   const content = (
@@ -136,7 +178,7 @@ function DropdownMenuContent({
       data-slot="dropdown-menu-content"
       sideOffset={sideOffset}
       className={cn(
-        'bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md',
+        'bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-[2147483647] max-h-(--radix-dropdown-menu-content-available-height) min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md',
         className,
       )}
       onPointerDownOutside={pointerDownOutsideHandler}
@@ -148,6 +190,9 @@ function DropdownMenuContent({
       {...props}
     />
   )
+
+  if (finalDisablePortal)
+    return content
 
   return (
     <DropdownMenuPrimitive.Portal container={finalContainer}>
@@ -174,7 +219,7 @@ function DropdownMenuItem({
   inset?: boolean
   variant?: 'default' | 'destructive'
 }) {
-  const context = React.use(FirefoxRadixContext)
+  const { isFirefoxMode, grantClosePermission } = React.use(FirefoxDropdownMenuContext)
 
   return (
     <DropdownMenuPrimitive.Item
@@ -186,7 +231,8 @@ function DropdownMenuItem({
         className,
       )}
       onSelect={(event) => {
-        context?.grantClosePermission()
+        if (isFirefoxMode)
+          grantClosePermission()
         onSelect?.(event)
       }}
       {...props}
@@ -199,9 +245,10 @@ function DropdownMenuCheckboxItem({
   children,
   checked,
   onSelect,
+  onCheckedChange,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.CheckboxItem>) {
-  const context = React.use(FirefoxRadixContext)
+  const { isFirefoxMode, grantClosePermission } = React.use(FirefoxDropdownMenuContext)
 
   return (
     <DropdownMenuPrimitive.CheckboxItem
@@ -212,8 +259,14 @@ function DropdownMenuCheckboxItem({
       )}
       checked={checked}
       onSelect={(event) => {
-        context?.grantClosePermission()
+        if (isFirefoxMode)
+          grantClosePermission()
         onSelect?.(event)
+      }}
+      onCheckedChange={(value) => {
+        if (isFirefoxMode)
+          grantClosePermission()
+        onCheckedChange?.(value)
       }}
       {...props}
     >
@@ -244,7 +297,7 @@ function DropdownMenuRadioItem({
   onSelect,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.RadioItem>) {
-  const context = React.use(FirefoxRadixContext)
+  const { isFirefoxMode, grantClosePermission } = React.use(FirefoxDropdownMenuContext)
 
   return (
     <DropdownMenuPrimitive.RadioItem
@@ -254,7 +307,8 @@ function DropdownMenuRadioItem({
         className,
       )}
       onSelect={(event) => {
-        context?.grantClosePermission()
+        if (isFirefoxMode)
+          grantClosePermission()
         onSelect?.(event)
       }}
       {...props}
@@ -328,10 +382,13 @@ function DropdownMenuSubTrigger({
   className,
   inset,
   children,
+  onSelect,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.SubTrigger> & {
   inset?: boolean
 }) {
+  const { isFirefoxMode, grantClosePermission } = React.use(FirefoxDropdownMenuContext)
+
   return (
     <DropdownMenuPrimitive.SubTrigger
       data-slot="dropdown-menu-sub-trigger"
@@ -340,6 +397,11 @@ function DropdownMenuSubTrigger({
         'focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[inset]:pl-8',
         className,
       )}
+      onSelect={(event) => {
+        if (isFirefoxMode)
+          grantClosePermission()
+        onSelect?.(event)
+      }}
       {...props}
     >
       {children}
@@ -350,17 +412,51 @@ function DropdownMenuSubTrigger({
 
 function DropdownMenuSubContent({
   className,
+  container,
+  onPointerDownOutside,
+  disablePortal = false,
+  hideWhenDetached,
   ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.SubContent>) {
-  return (
+}: React.ComponentProps<typeof DropdownMenuPrimitive.SubContent> & {
+  container?: HTMLElement | null
+  disablePortal?: boolean
+}) {
+  const isFirefoxExtensionEnv = React.useMemo(() => getIsFirefoxExtensionEnv(), [])
+
+  const pointerDownOutsideHandler = React.useMemo(() => {
+    if (!isFirefoxExtensionEnv)
+      return onPointerDownOutside
+
+    return (event: Event) => {
+      preventDismiss(event)
+      onPointerDownOutside?.(event as any)
+    }
+  }, [isFirefoxExtensionEnv, onPointerDownOutside])
+
+  const firefoxRoot = React.useMemo(() => getFirefoxExtensionRoot() ?? undefined, [])
+  const finalContainer = container ?? (isFirefoxExtensionEnv ? firefoxRoot : undefined)
+  const finalHideWhenDetached = isFirefoxExtensionEnv ? true : hideWhenDetached
+
+  const content = (
     <DropdownMenuPrimitive.SubContent
       data-slot="dropdown-menu-sub-content"
       className={cn(
-        'bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-md border p-1 shadow-lg',
+        'bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-[2147483647] min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-md border p-1 shadow-lg',
         className,
       )}
+      onPointerDownOutside={pointerDownOutsideHandler}
+      hideWhenDetached={finalHideWhenDetached}
       {...props}
     />
+  )
+
+  if (disablePortal)
+    return content
+
+  return (
+    <DropdownMenuPrimitive.Portal container={finalContainer}>
+      {content}
+    </DropdownMenuPrimitive.Portal>
   )
 }
 

@@ -42,7 +42,47 @@ export function unregisterFirefoxOutsideGuard(guard: FirefoxOutsideInteractionGu
   firefoxOutsideGuards.delete(guard)
 }
 
+export function getComposedEventPath(event: Event): EventTarget[] {
+  if (typeof event.composedPath === 'function')
+    return event.composedPath()
+
+  const path: EventTarget[] = []
+  let current: EventTarget | null = event.target ?? null
+  while (current) {
+    path.push(current)
+    if (current instanceof Node && current.parentNode)
+      current = current.parentNode
+    else
+      break
+  }
+  if (!path.includes(window))
+    path.push(window)
+  return path
+}
+
+export function elementMatchesSelector(element: Element, selector: string): boolean {
+  if (!selector)
+    return false
+
+  try {
+    if (element.matches(selector))
+      return true
+  }
+  catch {
+    // ignore selector syntax errors
+  }
+
+  try {
+    return Boolean(element.closest(selector))
+  }
+  catch {
+    return false
+  }
+}
+
 function shouldPreventByGuards(event: RadixLikeEvent): boolean {
+  // Safe fallback: if guards haven't registered yet (race condition during mount),
+  // prevent dismissal to avoid premature closes
   if (firefoxOutsideGuards.size === 0)
     return true
 
@@ -52,6 +92,7 @@ function shouldPreventByGuards(event: RadixLikeEvent): boolean {
         return true
     }
     catch {
+      // If guard throws, fail-safe to preventing dismissal
       return true
     }
   }
